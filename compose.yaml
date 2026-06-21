@@ -1,0 +1,15 @@
+services:
+  mealie-mcp-server:
+    image: mealie-mcp-server-container:latest
+    build:
+      context: .
+    env_file:
+      - .env
+    expose:
+      - "8000"
+    networks:
+      - mealie_internal
+
+networks:
+  mealie_internal:
+    external: true

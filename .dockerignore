@@ -1,0 +1,7 @@
+**
+
+!Dockerfile
+!.dockerignore
+!remote_server.py
+!scripts/
+!scripts/fetch_upstream.py
