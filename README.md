@@ -97,6 +97,25 @@ docker run --rm -p 8000:8000 --add-host=host.docker.internal:host-gateway --env-
 
 Podman may require host networking or an explicit host alias depending on your setup.
 
+## Published Image
+
+Images are published to GitHub Container Registry on pushes to `main`:
+
+```bash
+docker pull ghcr.io/matt-jenner/mealie-mcp-server-container:latest
+```
+
+Run the published image:
+
+```bash
+docker run --rm -p 8000:8000 \
+  -e MEALIE_BASE_URL=http://mealie:9000 \
+  -e MEALIE_API_KEY=your-api-key \
+  ghcr.io/matt-jenner/mealie-mcp-server-container:latest
+```
+
+The workflow also publishes a short commit-SHA tag for each build.
+
 ## HTTPS Proxy Deployment
 
 The container serves plain HTTP. Terminate HTTPS at your reverse proxy.
