@@ -1,8 +1,8 @@
 # Mealie MCP Server Container
 
-Docker wrapper for [`rldiao/mealie-mcp-server`](https://github.com/rldiao/mealie-mcp-server). It packages the upstream Python MCP server and exposes it as a remote MCP service over internal HTTP using FastMCP `streamable-http` transport.
+Dockerized Mealie MCP server exposed as a remote MCP service over internal HTTP using FastMCP `streamable-http` transport.
 
-This repository does not reimplement Mealie MCP tools. The container build fetches a pinned upstream source archive from `rldiao/mealie-mcp-server`, and this repository supplies the container, remote HTTP wrapper, deployment examples, and tests.
+The MCP implementation is vendored in `src/` and is maintained in this repository. It is based on [`rldiao/mealie-mcp-server`](https://github.com/rldiao/mealie-mcp-server), which is MIT licensed; the upstream license text is retained in `UPSTREAM_LICENSE`.
 
 ## Security Model
 
@@ -51,13 +51,7 @@ Podman equivalent:
 podman build -t mealie-mcp-server-container .
 ```
 
-By default the Dockerfile downloads `https://github.com/rldiao/mealie-mcp-server/archive/f7a2a5e21e68e223629393a5ad16f55dca6ea577.tar.gz` and installs dependencies using the upstream `uv.lock` with `uv sync --frozen --no-dev`.
-
-To intentionally build a newer upstream commit or tag, override `MEALIE_MCP_REF`:
-
-```bash
-docker build --build-arg MEALIE_MCP_REF=<commit-or-tag> -t mealie-mcp-server-container .
-```
+The Dockerfile builds from the local `src/` implementation and installs dependencies from this repository's `pyproject.toml`.
 
 Keep secrets such as `.env` files out of the build context, especially when using remote builders. The repository `.dockerignore` excludes common local secret and cache files.
 
@@ -120,7 +114,7 @@ The workflow also publishes a short commit-SHA tag for each build.
 
 The container serves plain HTTP. Terminate HTTPS at your reverse proxy.
 
-Typical internal upstream target:
+Typical internal service target:
 
 ```text
 http://mealie-mcp-server:8000/mcp
@@ -164,7 +158,7 @@ Build validation from this repository root:
 docker build -t mealie-mcp-server-container .
 ```
 
-Unit tests for wrapper-owned behavior from this project directory:
+Unit tests from this project directory:
 
 ```bash
 python -m venv .venv
@@ -212,7 +206,7 @@ Real Mealie validation should start with read-only operations. Run write tests o
 
 ## File Uploads
 
-The upstream MCP server includes tools that upload recipe images or assets from local file paths. In a containerized deployment, those paths must exist inside the container. Bind mount any upload directory read-only, for example:
+This MCP server includes tools that upload recipe images or assets from local file paths. In a containerized deployment, those paths must exist inside the container. Bind mount any upload directory read-only, for example:
 
 ```bash
 docker run --rm -p 8000:8000 --env-file .env -v /host/mealie-files:/mnt/mealie-files:ro mealie-mcp-server-container

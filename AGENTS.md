@@ -62,10 +62,10 @@ For each feature:
 
 ## Scope Rules
 
-- Do not edit upstream files in `../../3rdParty/mealie-mcp-server` unless the user explicitly asks.
+- Do not edit reference files in `../../3rdParty/mealie-mcp-server` unless the user explicitly asks.
 - Do not commit, amend, or push unless the user explicitly asks.
 - Do not add secrets to committed files.
-- Keep wrapper changes minimal and focused on the current spec story.
+- Keep changes minimal and focused on the current spec story.
 - Preserve unrelated user or agent changes.
 
 ## Review Standard

@@ -15,8 +15,8 @@ DEFAULT_PORT = 8000
 DEFAULT_PATH = "/mcp"
 
 
-def upstream_src_path() -> Path:
-    return Path(os.environ.get("MEALIE_MCP_SRC", "/app/mealie-mcp-server/src"))
+def implementation_src_path() -> Path:
+    return Path(os.environ.get("MEALIE_MCP_SRC", "/app/src"))
 
 
 def normalize_path(path: str | None) -> str:
@@ -86,7 +86,7 @@ class LazyApp:
 def create_app() -> ASGIApp:
     allowed_subnets = parse_allowed_subnets(os.environ.get("MCP_ALLOWED_SUBNETS"))
 
-    src_path = upstream_src_path()
+    src_path = implementation_src_path()
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 

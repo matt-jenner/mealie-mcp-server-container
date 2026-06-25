@@ -2,6 +2,9 @@
 
 !Dockerfile
 !.dockerignore
+!pyproject.toml
+!README.md
+!UPSTREAM_LICENSE
 !remote_server.py
-!scripts/
-!scripts/fetch_upstream.py
+!src/
+!src/**
