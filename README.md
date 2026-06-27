@@ -34,8 +34,12 @@ Optional:
 - `MCP_HOST`: bind host, default `0.0.0.0`
 - `MCP_PORT`: bind port, default `8000`
 - `MCP_PATH`: MCP endpoint path, default `/mcp`
+- `MCP_ALLOWED_HOSTS`: comma-separated Host header values allowed by MCP DNS-rebinding protection; defaults to loopback hosts only
+- `MCP_ALLOWED_ORIGINS`: comma-separated Origin header values; defaults to `http://` and `https://` origins derived from `MCP_ALLOWED_HOSTS`
 - `MCP_ALLOWED_SUBNETS`: comma-separated CIDRs; empty means allow all direct peers
 - `LOG_LEVEL`: default `INFO`
+
+When running behind a reverse proxy, set `MCP_ALLOWED_HOSTS` to the public hostname clients use, for example `recipes-mcp.example.com`. Wildcard ports are supported for host values such as `localhost:*`.
 
 ## Build
 

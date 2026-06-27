@@ -13,6 +13,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 DEFAULT_HOST = "0.0.0.0"
 DEFAULT_PORT = 8000
 DEFAULT_PATH = "/mcp"
+DEFAULT_ALLOWED_HOSTS = ["127.0.0.1:*", "localhost:*", "[::1]:*"]
 
 
 def implementation_src_path() -> Path:
@@ -36,6 +37,16 @@ def parse_allowed_subnets(raw: str | None) -> list[ipaddress._BaseNetwork]:
             continue
         networks.append(ipaddress.ip_network(value, strict=False))
     return networks
+
+
+def parse_csv(raw: str | None) -> list[str]:
+    if not raw:
+        return []
+    return [item.strip() for item in raw.split(",") if item.strip()]
+
+
+def origins_from_hosts(hosts: list[str]) -> list[str]:
+    return [f"{scheme}://{host}" for host in hosts for scheme in ("http", "https")]
 
 
 def client_is_allowed(client_host: str | None, allowed_subnets: Iterable[ipaddress._BaseNetwork]) -> bool:
@@ -85,14 +96,22 @@ class LazyApp:
 
 def create_app() -> ASGIApp:
     allowed_subnets = parse_allowed_subnets(os.environ.get("MCP_ALLOWED_SUBNETS"))
+    allowed_hosts = parse_csv(os.environ.get("MCP_ALLOWED_HOSTS")) or DEFAULT_ALLOWED_HOSTS
+    allowed_origins = parse_csv(os.environ.get("MCP_ALLOWED_ORIGINS")) or origins_from_hosts(allowed_hosts)
 
     src_path = implementation_src_path()
     if str(src_path) not in sys.path:
         sys.path.insert(0, str(src_path))
 
+    from mcp.server.transport_security import TransportSecuritySettings
     from server import mcp  # type: ignore[import-not-found]
 
     mcp.settings.streamable_http_path = normalize_path(os.environ.get("MCP_PATH"))
+    mcp.settings.transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=True,
+        allowed_hosts=allowed_hosts,
+        allowed_origins=allowed_origins,
+    )
     app = mcp.streamable_http_app()
 
     return SubnetAllowlistMiddleware(app, allowed_subnets)

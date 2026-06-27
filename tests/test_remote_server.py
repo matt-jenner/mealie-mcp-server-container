@@ -1,9 +1,21 @@
 from __future__ import annotations
 
+import sys
+from types import SimpleNamespace
+
 import pytest
 from starlette.testclient import TestClient
 
-from remote_server import SubnetAllowlistMiddleware, client_is_allowed, create_app, normalize_path, parse_allowed_subnets
+from remote_server import (
+    DEFAULT_ALLOWED_HOSTS,
+    SubnetAllowlistMiddleware,
+    client_is_allowed,
+    create_app,
+    normalize_path,
+    origins_from_hosts,
+    parse_allowed_subnets,
+    parse_csv,
+)
 
 
 async def ok_app(scope, receive, send):
@@ -11,6 +23,14 @@ async def ok_app(scope, receive, send):
 
     response = PlainTextResponse("ok")
     await response(scope, receive, send)
+
+
+class FakeMCP:
+    def __init__(self) -> None:
+        self.settings = SimpleNamespace(streamable_http_path=None, transport_security=None)
+
+    def streamable_http_app(self):
+        return ok_app
 
 
 def test_normalize_path_defaults_and_adds_slash() -> None:
@@ -24,6 +44,19 @@ def test_empty_allowed_subnets_allows_all() -> None:
     assert parse_allowed_subnets(None) == []
     assert parse_allowed_subnets("") == []
     assert client_is_allowed("203.0.113.10", []) is True
+
+
+def test_parse_csv_trims_empty_items() -> None:
+    assert parse_csv(None) == []
+    assert parse_csv("") == []
+    assert parse_csv(" localhost:*, recipes.example.com ,, ") == ["localhost:*", "recipes.example.com"]
+
+
+def test_origins_from_hosts_allows_http_and_https() -> None:
+    assert origins_from_hosts(["recipes.example.com"]) == [
+        "http://recipes.example.com",
+        "https://recipes.example.com",
+    ]
 
 
 def test_allowed_subnets_match_ipv4_and_ipv6() -> None:
@@ -65,3 +98,26 @@ def test_create_app_fails_on_invalid_allowed_subnet(monkeypatch: pytest.MonkeyPa
     monkeypatch.setenv("MCP_ALLOWED_SUBNETS", "not-a-cidr")
     with pytest.raises(ValueError):
         create_app()
+
+
+def test_create_app_configures_default_transport_security(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_mcp = FakeMCP()
+    monkeypatch.setitem(sys.modules, "server", SimpleNamespace(mcp=fake_mcp))
+
+    create_app()
+
+    assert fake_mcp.settings.transport_security.enable_dns_rebinding_protection is True
+    assert fake_mcp.settings.transport_security.allowed_hosts == DEFAULT_ALLOWED_HOSTS
+    assert "http://localhost:*" in fake_mcp.settings.transport_security.allowed_origins
+
+
+def test_create_app_configures_transport_security_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    fake_mcp = FakeMCP()
+    monkeypatch.setitem(sys.modules, "server", SimpleNamespace(mcp=fake_mcp))
+    monkeypatch.setenv("MCP_ALLOWED_HOSTS", "recipes-mcp.docker.jenner.lan")
+    monkeypatch.setenv("MCP_ALLOWED_ORIGINS", "https://recipes.example.com")
+
+    create_app()
+
+    assert fake_mcp.settings.transport_security.allowed_hosts == ["recipes-mcp.docker.jenner.lan"]
+    assert fake_mcp.settings.transport_security.allowed_origins == ["https://recipes.example.com"]
