@@ -156,6 +156,90 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             raise ToolError(error_msg)
 
     @mcp.tool()
+    def get_foods(
+        search: Optional[str] = None,
+        page: Optional[int] = None,
+        per_page: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get ingredient foods with optional search.
+
+        Use this to find existing Mealie food IDs before sending structured
+        recipe ingredients.
+        """
+        try:
+            logger.info({"message": "Fetching foods", "search": search})
+            params = {
+                "search": search,
+                "page": page,
+                "perPage": per_page,
+            }
+            params = {key: value for key, value in params.items() if value is not None}
+            return mealie._handle_request("GET", "/api/foods", params=params)
+        except Exception as e:
+            error_msg = f"Error fetching foods: {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def create_food(name: str) -> Dict[str, Any]:
+        """Create an ingredient food and return the created Mealie food object."""
+        try:
+            logger.info({"message": "Creating food", "name": name})
+            return mealie._handle_request("POST", "/api/foods", json={"name": name})
+        except Exception as e:
+            error_msg = f"Error creating food '{name}': {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def get_units(
+        search: Optional[str] = None,
+        page: Optional[int] = None,
+        per_page: Optional[int] = None,
+    ) -> Dict[str, Any]:
+        """Get ingredient units with optional search.
+
+        Use this to find existing Mealie unit IDs before sending structured
+        recipe ingredients.
+        """
+        try:
+            logger.info({"message": "Fetching units", "search": search})
+            params = {
+                "search": search,
+                "page": page,
+                "perPage": per_page,
+            }
+            params = {key: value for key, value in params.items() if value is not None}
+            return mealie._handle_request("GET", "/api/units", params=params)
+        except Exception as e:
+            error_msg = f"Error fetching units: {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def create_unit(name: str) -> Dict[str, Any]:
+        """Create an ingredient unit and return the created Mealie unit object."""
+        try:
+            logger.info({"message": "Creating unit", "name": name})
+            return mealie._handle_request("POST", "/api/units", json={"name": name})
+        except Exception as e:
+            error_msg = f"Error creating unit '{name}': {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
     def create_recipe(
         name: str, ingredients: List[str], instructions: List[str]
     ) -> Dict[str, Any]:

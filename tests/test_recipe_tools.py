@@ -23,6 +23,7 @@ class FakeMealie:
         self.created_names = []
         self.updated = []
         self.patched = []
+        self.requests = []
         self.recipes = {
             "stifado": {
                 "slug": "stifado",
@@ -50,6 +51,10 @@ class FakeMealie:
     def patch_recipe(self, slug: str, payload: dict):
         self.patched.append((slug, payload))
         return payload
+
+    def _handle_request(self, method: str, url: str, **kwargs):
+        self.requests.append((method, url, kwargs))
+        return {"method": method, "url": url, **kwargs}
 
 
 def registered_tools(mealie: FakeMealie) -> dict:
@@ -116,6 +121,50 @@ def test_create_recipe_updates_new_recipe_with_payload() -> None:
     assert mealie.updated[0][0] == "stifado"
     assert result["recipeIngredient"][0]["note"] == "1 kilogram beef"
     assert result["recipeInstructions"][0]["text"] == "Cook gently."
+
+
+def test_get_foods_searches_food_endpoint() -> None:
+    mealie = FakeMealie()
+    tools = registered_tools(mealie)
+
+    result = tools["get_foods"]("malt vinegar", page=1, per_page=10)
+
+    assert result["method"] == "GET"
+    assert result["url"] == "/api/foods"
+    assert result["params"] == {"search": "malt vinegar", "page": 1, "perPage": 10}
+
+
+def test_create_food_posts_food_name() -> None:
+    mealie = FakeMealie()
+    tools = registered_tools(mealie)
+
+    result = tools["create_food"]("malt vinegar")
+
+    assert result["method"] == "POST"
+    assert result["url"] == "/api/foods"
+    assert result["json"] == {"name": "malt vinegar"}
+
+
+def test_get_units_searches_unit_endpoint() -> None:
+    mealie = FakeMealie()
+    tools = registered_tools(mealie)
+
+    result = tools["get_units"]("wineglass")
+
+    assert result["method"] == "GET"
+    assert result["url"] == "/api/units"
+    assert result["params"] == {"search": "wineglass"}
+
+
+def test_create_unit_posts_unit_name() -> None:
+    mealie = FakeMealie()
+    tools = registered_tools(mealie)
+
+    result = tools["create_unit"]("wineglass")
+
+    assert result["method"] == "POST"
+    assert result["url"] == "/api/units"
+    assert result["json"] == {"name": "wineglass"}
 
 
 def test_patch_recipe_sends_only_provided_fields() -> None:
