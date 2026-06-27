@@ -23,6 +23,13 @@ def recipe_update_payload(
     return recipe_json
 
 
+def recipe_ingredients_update_payload(
+    recipe_json: Dict[str, Any], ingredients: List[Dict[str, Any]]
+) -> Dict[str, Any]:
+    recipe_json["recipeIngredient"] = ingredients
+    return recipe_json
+
+
 def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
     """Register all recipe-related tools with the MCP server."""
 
@@ -201,6 +208,39 @@ def register_recipe_tools(mcp: FastMCP, mealie: MealieFetcher) -> None:
             )
         except Exception as e:
             error_msg = f"Error updating recipe '{slug}': {str(e)}"
+            logger.error({"message": error_msg})
+            logger.debug(
+                {"message": "Error traceback", "traceback": traceback.format_exc()}
+            )
+            raise ToolError(error_msg)
+
+    @mcp.tool()
+    def update_recipe_ingredients(
+        slug: str,
+        ingredients: List[Dict[str, Any]],
+    ) -> Dict[str, Any]:
+        """Replace the structured ingredients of an existing recipe.
+
+        Use this when ingredient quantity, unit, food, and note must remain separate
+        fields instead of being collapsed into display text.
+
+        Args:
+            slug: The unique text identifier for the recipe to be updated.
+            ingredients: A list of Mealie recipeIngredient objects. Each entry may
+                include quantity, unit, food, note, display, title, originalText, and
+                referenceId fields.
+
+        Returns:
+            Dict[str, Any]: The updated recipe details.
+        """
+        try:
+            logger.info({"message": "Updating recipe ingredients", "slug": slug})
+            recipe_json = mealie.get_recipe(slug)
+            return mealie.update_recipe(
+                slug, recipe_ingredients_update_payload(recipe_json, ingredients)
+            )
+        except Exception as e:
+            error_msg = f"Error updating recipe ingredients for '{slug}': {str(e)}"
             logger.error({"message": error_msg})
             logger.debug(
                 {"message": "Error traceback", "traceback": traceback.format_exc()}

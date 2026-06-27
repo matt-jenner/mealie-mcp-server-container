@@ -80,6 +80,28 @@ def test_update_recipe_preserves_raw_metadata_shape() -> None:
     ]
 
 
+def test_update_recipe_ingredients_preserves_structured_entries() -> None:
+    mealie = FakeMealie()
+    tools = registered_tools(mealie)
+    ingredients = [
+        {
+            "quantity": 4,
+            "unit": {"name": "tablespoon"},
+            "food": {"name": "malt vinegar"},
+            "note": "The recipe calls for 2 tbsp twice",
+        }
+    ]
+
+    result = tools["update_recipe_ingredients"]("stifado", ingredients)
+
+    assert mealie.updated[0][0] == "stifado"
+    assert result["totalTime"] == "2 hours 30 minutes"
+    assert result["recipeCategory"] == [{"name": "Greek", "slug": "greek"}]
+    assert result["tags"] == [{"name": "Beef", "slug": "beef"}]
+    assert result["recipeIngredient"] == ingredients
+    assert result["recipeInstructions"] == [{"text": "old instruction"}]
+
+
 def test_create_recipe_updates_new_recipe_with_payload() -> None:
     mealie = FakeMealie()
     tools = registered_tools(mealie)
