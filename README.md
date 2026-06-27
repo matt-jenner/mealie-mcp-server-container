@@ -109,6 +109,7 @@ Run the published image:
 docker run --rm -p 8000:8000 \
   -e MEALIE_BASE_URL=http://mealie:9000 \
   -e MEALIE_API_KEY=your-api-key \
+  -e MCP_ALLOWED_HOSTS=recipes-mcp.example.com \
   ghcr.io/matt-jenner/mealie-mcp-server-container:latest
 ```
 
@@ -117,6 +118,18 @@ The workflow also publishes a short commit-SHA tag for each build.
 ## HTTPS Proxy Deployment
 
 The container serves plain HTTP. Terminate HTTPS at your reverse proxy.
+
+Set `MCP_ALLOWED_HOSTS` to the public hostname clients use. This is required because the MCP SDK validates the `Host` header to protect against DNS rebinding attacks. Use hostnames only, without `http://` or `https://`:
+
+```env
+MCP_ALLOWED_HOSTS=recipes-mcp.example.com
+```
+
+If your proxy forwards a port in the `Host` header, include the wildcard-port form too:
+
+```env
+MCP_ALLOWED_HOSTS=recipes-mcp.example.com,recipes-mcp.example.com:*
+```
 
 Typical internal service target:
 
